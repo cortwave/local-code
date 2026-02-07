@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ============================================================================
 # Local Claude Code Setup
-# Sets up Qwen3-Coder-Next-FP8 via vLLM + LiteLLM for use with Claude Code
+# Sets up Qwen3-Coder-Next-NVFP4 via vLLM + LiteLLM for use with Claude Code
 # ============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,8 +14,8 @@ MAX_MODEL_LEN=32768
 TENSOR_PARALLEL_SIZE=1
 VLLM_PORT=8000
 LITELLM_PORT=4000
-GPU_MEMORY_UTILIZATION=0.80
-MODEL="Qwen/Qwen3-Coder-Next-FP8"
+GPU_MEMORY_UTILIZATION=0.95
+MODEL="GadflyII/Qwen3-Coder-Next-NVFP4"
 MASTER_KEY="sk-local"
 HEALTH_TIMEOUT=600  # 10 minutes (model download can take a while)
 
@@ -178,7 +178,7 @@ else
 fi
 
 log "Installing dependencies (this may take a few minutes)..."
-uv pip install --python .venv/bin/python "vllm>=0.15.0" "litellm[proxy]" hf_transfer
+uv pip install --python .venv/bin/python "vllm>=0.16.0" "litellm[proxy]" hf_transfer
 log "Dependencies installed."
 
 # ============================================================================
@@ -234,6 +234,7 @@ HF_HUB_ENABLE_HF_TRANSFER=1 .venv/bin/python -m vllm.entrypoints.openai.api_serv
     --tensor-parallel-size "$TENSOR_PARALLEL_SIZE" \
     --max-model-len "$MAX_MODEL_LEN" \
     --gpu-memory-utilization "$GPU_MEMORY_UTILIZATION" \
+    --kv-cache-dtype fp8 \
     --enable-auto-tool-choice \
     --tool-call-parser qwen3_coder \
     --enforce-eager \
