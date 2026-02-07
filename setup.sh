@@ -178,7 +178,7 @@ else
 fi
 
 log "Installing dependencies (this may take a few minutes)..."
-uv pip install --python .venv/bin/python "vllm>=0.16.0" "litellm[proxy]" hf_transfer
+uv pip install --python .venv/bin/python --prerelease=allow "vllm>=0.16.0rc1" "litellm[proxy]" hf_transfer
 log "Dependencies installed."
 
 # ============================================================================
