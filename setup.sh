@@ -14,7 +14,7 @@ MAX_MODEL_LEN=32768
 TENSOR_PARALLEL_SIZE=1
 VLLM_PORT=8000
 LITELLM_PORT=4000
-GPU_MEMORY_UTILIZATION=0.95
+GPU_MEMORY_UTILIZATION=0.80
 MODEL="Qwen/Qwen3-Coder-Next-FP8"
 MASTER_KEY="sk-local"
 HEALTH_TIMEOUT=600  # 10 minutes (model download can take a while)
@@ -295,7 +295,7 @@ while [[ $elapsed -lt 60 ]]; do
         rm -f .litellm.pid
         exit 1
     fi
-    if curl -sf "http://localhost:${LITELLM_PORT}/health" >/dev/null 2>&1; then
+    if curl -sf -H "Authorization: Bearer ${MASTER_KEY}" "http://localhost:${LITELLM_PORT}/health" >/dev/null 2>&1; then
         log "LiteLLM is ready!"
         break
     fi
