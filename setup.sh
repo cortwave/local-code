@@ -178,7 +178,7 @@ else
 fi
 
 log "Installing dependencies (this may take a few minutes)..."
-uv pip install --python .venv/bin/python "vllm>=0.15.0" "litellm[proxy]"
+uv pip install --python .venv/bin/python "vllm>=0.15.0" "litellm[proxy]" hf_transfer
 log "Dependencies installed."
 
 # ============================================================================
@@ -228,7 +228,7 @@ info "  Tensor parallel size: $TENSOR_PARALLEL_SIZE"
 info "  Max model length: $MAX_MODEL_LEN"
 info "  GPU memory utilization: $GPU_MEMORY_UTILIZATION"
 
-.venv/bin/python -m vllm.entrypoints.openai.api_server \
+HF_HUB_ENABLE_HF_TRANSFER=1 .venv/bin/python -m vllm.entrypoints.openai.api_server \
     --model "$MODEL" \
     --port "$VLLM_PORT" \
     --tensor-parallel-size "$TENSOR_PARALLEL_SIZE" \
