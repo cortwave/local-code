@@ -1,0 +1,6 @@
+.venv/
+logs/
+.vllm.pid
+.litellm.pid
+.env
+litellm-config.yaml
