@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ============================================================================
 # Local Claude Code Setup
-# Sets up Qwen3-Coder-Next-NVFP4 via vLLM + LiteLLM for use with Claude Code
+# Sets up Qwen3-Coder-Next via vLLM + LiteLLM for use with Claude Code
 # ============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,7 +15,7 @@ TENSOR_PARALLEL_SIZE=1
 VLLM_PORT=8000
 LITELLM_PORT=4000
 GPU_MEMORY_UTILIZATION=0.95
-MODEL="GadflyII/Qwen3-Coder-Next-NVFP4"
+QUANTIZATION="nvfp4"
 MASTER_KEY="sk-local"
 HEALTH_TIMEOUT=600  # 10 minutes (model download can take a while)
 
@@ -49,6 +49,7 @@ Options:
   --vllm-port N                vLLM serving port (default: $VLLM_PORT)
   --litellm-port N             LiteLLM proxy port (default: $LITELLM_PORT)
   --gpu-memory-utilization N   GPU memory fraction (default: $GPU_MEMORY_UTILIZATION)
+  --quantization TYPE          Quantization type: fp8 (~80GB) or nvfp4 (~45GB) (default: $QUANTIZATION)
   -h, --help                   Show this help
 EOF
 }
@@ -71,6 +72,8 @@ while [[ $# -gt 0 ]]; do
             LITELLM_PORT="$2"; shift 2 ;;
         --gpu-memory-utilization)
             GPU_MEMORY_UTILIZATION="$2"; shift 2 ;;
+        --quantization)
+            QUANTIZATION="$2"; shift 2 ;;
         -h|--help)
             usage; exit 0 ;;
         *)
@@ -78,6 +81,20 @@ while [[ $# -gt 0 ]]; do
             usage; exit 1 ;;
     esac
 done
+
+# ============================================================================
+# Resolve model from quantization
+# ============================================================================
+
+case "$QUANTIZATION" in
+    fp8)
+        MODEL="Qwen/Qwen3-Coder-Next-FP8" ;;
+    nvfp4)
+        MODEL="GadflyII/Qwen3-Coder-Next-NVFP4" ;;
+    *)
+        error "Unknown quantization type: $QUANTIZATION (must be fp8 or nvfp4)"
+        exit 1 ;;
+esac
 
 # ============================================================================
 # Stop command
@@ -255,16 +272,21 @@ info "  Tensor parallel size: $TENSOR_PARALLEL_SIZE"
 info "  Max model length: $MAX_MODEL_LEN"
 info "  GPU memory utilization: $GPU_MEMORY_UTILIZATION"
 
+VLLM_EXTRA_ARGS=()
+if [[ "$QUANTIZATION" == "nvfp4" ]]; then
+    VLLM_EXTRA_ARGS+=(--kv-cache-dtype fp8)
+fi
+
 HF_HUB_ENABLE_HF_TRANSFER=1 .venv/bin/python -m vllm.entrypoints.openai.api_server \
     --model "$MODEL" \
     --port "$VLLM_PORT" \
     --tensor-parallel-size "$TENSOR_PARALLEL_SIZE" \
     --max-model-len "$MAX_MODEL_LEN" \
     --gpu-memory-utilization "$GPU_MEMORY_UTILIZATION" \
-    --kv-cache-dtype fp8 \
     --enable-auto-tool-choice \
     --tool-call-parser qwen3_coder \
     --enforce-eager \
+    "${VLLM_EXTRA_ARGS[@]}" \
     > logs/vllm.log 2>&1 &
 
 VLLM_PID=$!
