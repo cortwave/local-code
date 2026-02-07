@@ -141,14 +141,50 @@ nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader | 
     info "  $line"
 done
 
-# Check uv
+# Install uv if missing
 if ! command -v uv &>/dev/null; then
-    error "uv is not installed. Install it with:"
-    echo "  curl -LsSf https://astral.sh/uv/install.sh | sh"
-    exit 1
+    log "Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$PATH"
+    if ! command -v uv &>/dev/null; then
+        error "uv installation failed."
+        exit 1
+    fi
+    log "uv installed."
+else
+    info "uv already installed."
+fi
+info "uv version: $(uv --version)"
+
+# Install nvtop if missing
+if ! command -v nvtop &>/dev/null; then
+    log "Installing nvtop..."
+    if command -v apt-get &>/dev/null; then
+        sudo apt-get update -qq && sudo apt-get install -y -qq nvtop
+    elif command -v dnf &>/dev/null; then
+        sudo dnf install -y nvtop
+    else
+        warn "Could not install nvtop: no supported package manager found. Install it manually."
+    fi
+    if command -v nvtop &>/dev/null; then
+        log "nvtop installed."
+    fi
+else
+    info "nvtop already installed."
 fi
 
-info "uv version: $(uv --version)"
+# Install Claude Code if missing
+if ! command -v claude &>/dev/null; then
+    log "Installing Claude Code..."
+    curl -fsSL https://claude.ai/install.sh | bash
+    if ! command -v claude &>/dev/null; then
+        error "Claude Code installation failed."
+        exit 1
+    fi
+    log "Claude Code installed."
+else
+    info "Claude Code already installed."
+fi
 
 # Check if services are already running
 for service in vllm litellm; do
