@@ -173,18 +173,9 @@ else
     info "nvtop already installed."
 fi
 
-# Install Claude Code if missing
-if ! command -v claude &>/dev/null; then
-    log "Installing Claude Code..."
-    curl -fsSL https://claude.ai/install.sh | bash
-    if ! command -v claude &>/dev/null; then
-        error "Claude Code installation failed."
-        exit 1
-    fi
-    log "Claude Code installed."
-else
-    info "Claude Code already installed."
-fi
+# Install Claude Code
+log "Installing Claude Code..."
+curl -fsSL https://claude.ai/install.sh | bash
 
 # Check if services are already running
 for service in vllm litellm; do
@@ -214,7 +205,7 @@ else
 fi
 
 log "Installing dependencies (this may take a few minutes)..."
-uv pip install --python .venv/bin/python --prerelease=allow "vllm>=0.16.0rc1" "litellm[proxy]" hf_transfer
+uv pip install --python .venv/bin/python "vllm>=0.15,<0.16" "litellm[proxy]" hf_transfer
 log "Dependencies installed."
 
 # ============================================================================
