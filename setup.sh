@@ -236,6 +236,7 @@ HF_HUB_ENABLE_HF_TRANSFER=1 .venv/bin/python -m vllm.entrypoints.openai.api_serv
     --gpu-memory-utilization "$GPU_MEMORY_UTILIZATION" \
     --enable-auto-tool-choice \
     --tool-call-parser qwen3_coder \
+    --enforce-eager \
     > logs/vllm.log 2>&1 &
 
 VLLM_PID=$!
